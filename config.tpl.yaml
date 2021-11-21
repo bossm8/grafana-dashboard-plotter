@@ -1,0 +1,35 @@
+# Grafana instance configuration
+grafana:
+  # API key for grafana with admin level, needed to request datasources
+  # REQUIRED
+  admin_api_key: SOME_API_KEY_IN_BASE_64
+  # Base URL of your grafana instance including scheme and port
+  # REQUIRED
+  base_url: https://grafana.example.com:3000
+  # Default time range in seconds, subtracted from the time the program gets executed
+  # This can be overridden with --from
+  # OPTIONAL (default: 3600)
+  default_time_slice: 7200
+
+# Which dashboards shall be plotted
+dashboards:
+  # Dashboard uid REQUIRED
+  # This dashboard does not have variables specified, so they will be ignored and
+  # only the default values are used
+  - uid: oOf-u1V7z
+  # Another dashboard with specified variables
+  # Only the specified variables are used when plotting panels, others are ignored
+  # only their default is used automatically by grafana
+  - uid: BJO0XQS7k
+    variables: ['job', 'protocol']
+
+prometheus:
+  # Currently this program is very limited and the prometheus node exporter job name
+  # (from prometheus's scrape_config) must be given
+  # This will be placed in any query which contains $job
+  node_exporter_job_name: node
+
+plots:
+  # Absolute or relative path to the directory to store the plots into
+  # OPTIONAL (default: ./plots)
+  output_dir:
