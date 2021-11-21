@@ -224,4 +224,5 @@ class Dashboard:
         result = self.grafana_client.d_solo_render(params=params,
                                                    dashboard_uid=self.uid,
                                                    dashboard_slug=self.slug)
-        open(name, 'wb').write(result.content)
+        with open(name, 'wb') as png:
+            png.write(result.content)
