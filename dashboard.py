@@ -218,7 +218,7 @@ class Dashboard:
         # Add a custom height for graphs and timeseries so that all legend values are added for sure
         if self.current_panel['type'] == 'graph' or self.current_panel['type'] == 'timeseries':
             params['height'] = 800
-            params['width'] = 500
+            params['width'] = 1200
 
         print(f'INFO: Creating {name}')
         result = self.grafana_client.d_solo_render(params=params,
