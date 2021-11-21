@@ -6,7 +6,7 @@ Grafana Dashboard plotter entrypoint
 """
 
 from os import path as os_path
-from time import time
+from time import time_ns, time, strftime, localtime
 from argparse import ArgumentParser
 from confuse import Configuration
 from multiprocessing import Pool, cpu_count
@@ -19,11 +19,13 @@ _grafana_client: GrafanaClient
 _config = Configuration('GrafanaDashboardPlotter', __name__)
 _config.set_file('config.yaml')
 
+_current_time_ms = int(time_ns() // 1_000_000)
+
 try:
-    _from = int(time()) - _config['grafana']['default_time_slice'].get(int)
+    _from = _current_time_ms - (_config['grafana']['default_time_slice'].get(int) * 1000)
 except:
     print('INFO: no (correct) time slice specified, using 3600s (now-1h as start)')
-    _from = int(time()) - 3600
+    _from = _current_time_ms - (3600 * 1000)
 
 try:
     _output_dir = _config['plots']['output_dir'].as_path()
@@ -98,14 +100,14 @@ def main():
     _grafana_client = GrafanaClient(
         base_url=_config['grafana']['base_url'].get(str),
         api_key=_config['grafana']['admin_api_key'].get(str),
-        _from=int(args['from']) if args['from'] else _from,
-        _to=args['to'],
+        _from=int(args['from'] * 1000) if args['from'] else _from,
+        _to=int(args['to'] * 1000),
         node_exporter_job_name=_config['prometheus']['node_exporter_job_name'].get(str)
     )
 
     print('INFO: Creating plots between {} and {}'.format(
-        args['from'] if args['from'] else _from,
-        args['to']
+        strftime('%X %x %Z', localtime(int(args['from']) if args['from'] else _from/1000)),
+        strftime('%X %x %Z', localtime(int(args['to'])))
     ))
     run(concurrent=False if args['seq'] else True)
 

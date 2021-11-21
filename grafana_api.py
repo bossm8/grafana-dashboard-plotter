@@ -6,7 +6,7 @@ Client implementation for the Grafana API
 """
 
 from re import compile
-from time import time
+from time import time_ns
 from requests import request, Response
 
 
@@ -18,8 +18,8 @@ class GrafanaClient:
     def __init__(self,
                  base_url,
                  api_key,
-                 _from: str = None,
-                 _to: str = None,
+                 _from: int = None,
+                 _to: int = None,
                  node_exporter_job_name: str = 'node',
                  insecure_tls_skip_verify: bool = False):
         """
@@ -36,12 +36,15 @@ class GrafanaClient:
 
         self.base_url = base_url
         self.verify = not insecure_tls_skip_verify
-        self._from = _from if _from is not None else time() - 3600
-        self._to = _to if _to is not None else time()
+        _current_time_ms = int(time_ns() // 1_000_000)
+        self._from = _from if _from is not None else _current_time_ms - (3600 * 1000)
+        self._to = _to if _to is not None else _current_time_ms
         self.node_exporter_job_name = node_exporter_job_name
         self.default_params = {
             'theme': 'light',
             'orgId': '1',
+            'from': self._from,
+            'to': self._to
         }
         self.default_headers = {
             'Authorization': 'Bearer ' + api_key,
@@ -164,8 +167,9 @@ class GrafanaClient:
                 metric = metric.replace('$job', self.node_exporter_job_name)
             params = {
                 'match[]': metric,
-                'start': self._from,
-                'end': self._to,
+                # Prometheus uses seconds
+                'start': int(self._from / 1000),
+                'end': int(self._to / 1000),
             }
             result = self.__datasource_proxy(f'{datasource_id}/api/v1/series', params).json()
             # Extract the required values from the json and filter out unwanted multi value options
