@@ -7,7 +7,9 @@ Client implementation for the Grafana API
 
 from re import compile
 from time import time_ns
+from urllib3 import disable_warnings
 from requests import request, Response
+from urllib3.exceptions import InsecureRequestWarning
 
 
 class GrafanaClient:
@@ -18,33 +20,38 @@ class GrafanaClient:
     def __init__(self,
                  base_url,
                  api_key,
-                 _from: int = None,
-                 _to: int = None,
+                 from_ms: int = None,
+                 to_ms: int = None,
                  node_exporter_job_name: str = 'node',
-                 insecure_tls_skip_verify: bool = False):
+                 tls_verify: bool = True):
         """
         Create a grafana client.
         From and To are static, means all queries and renders are done in the time period in between those two.
 
         :param base_url: The base url of the grafana instance including scheme and port
         :param api_key: An admin level api key for the instance, since requesting datasources is needed
-        :param _from: Start timestamp which is used when querying datasources or the render api (default: now-1h)
-        :param _to: End timestamp which is used when querying datasources or the render api (default: now)
+        :param from_ms: Start timestamp in ms which is used when querying datasources or the render api
+                        (default: now-1h)
+        :param to_ms: End timestamp in ms which is used when querying datasources or the render api
+                      (default: now)
         :param node_exporter_job_name: The name of the job (scrape_config) for the prometheus node exporter
-        :param insecure_tls_skip_verify: If the instances certificate should be verified
+        :param tls_verify: If the instances certificate should be verified
         """
 
         self.base_url = base_url
-        self.verify = not insecure_tls_skip_verify
+        self.verify = tls_verify
+        if not self.verify:
+            print('INFO: Skipping certificate verification')
+            disable_warnings(InsecureRequestWarning)
         _current_time_ms = int(time_ns() // 1_000_000)
-        self._from = _from if _from is not None else _current_time_ms - (3600 * 1000)
-        self._to = _to if _to is not None else _current_time_ms
+        self.from_ms = from_ms if from_ms is not None else _current_time_ms - (3600 * 1000)
+        self.to_ms = to_ms if to_ms is not None else _current_time_ms
         self.node_exporter_job_name = node_exporter_job_name
         self.default_params = {
             'theme': 'light',
             'orgId': '1',
-            'from': self._from,
-            'to': self._to
+            'from': self.from_ms,
+            'to': self.to_ms
         }
         self.default_headers = {
             'Authorization': 'Bearer ' + api_key,
@@ -168,8 +175,8 @@ class GrafanaClient:
             params = {
                 'match[]': metric,
                 # Prometheus uses seconds
-                'start': int(self._from / 1000),
-                'end': int(self._to / 1000),
+                'start': int(self.from_ms / 1000),
+                'end': int(self.to_ms / 1000),
             }
             result = self.__datasource_proxy(f'{datasource_id}/api/v1/series', params).json()
             # Extract the required values from the json and filter out unwanted multi value options

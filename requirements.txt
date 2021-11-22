@@ -1,6 +1,5 @@
 certifi==2021.10.8
 charset-normalizer==2.0.7
-confuse==1.6.0
 idna==3.3
 python-slugify==5.0.2
 PyYAML==6.0

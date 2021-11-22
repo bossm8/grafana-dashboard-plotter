@@ -146,3 +146,4 @@ cython_debug/
 plots
 .idea
 config.yaml
+.config.yaml

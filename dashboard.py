@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 Grafana Dashboard implementation to save its panels as png plots
 

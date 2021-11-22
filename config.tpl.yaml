@@ -7,9 +7,13 @@ grafana:
   # REQUIRED
   base_url: https://grafana.example.com:3000
   # Default time range in seconds, subtracted from the time the program gets executed
-  # This can be overridden with --from
+  # or from the flag --to if specified.
+  # This will be overridden with --from.
   # OPTIONAL (default: 3600)
-  default_time_slice: 7200
+  default_time_range: 3600
+  # If the certificate of the instance should be verified
+  # OPTIONAL (default: true)
+  tls_verify: true
 
 # Which dashboards shall be plotted
 dashboards:
@@ -32,4 +36,4 @@ prometheus:
 plots:
   # Absolute or relative path to the directory to store the plots into
   # OPTIONAL (default: ./plots)
-  output_dir:
+  output_dir: plots
