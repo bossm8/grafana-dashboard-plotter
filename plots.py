@@ -41,10 +41,13 @@ def plot_dashboard(dash_config: dict):
 
     if 'variables' not in dash_config:
         dash_config['variables'] = []
+    if 'ignore' not in dash_config:
+        dash_config['ignore'] = ''
 
     dashboard = Dashboard(_grafana_client,
                           dash_config['uid'],
-                          dash_config['variables'])
+                          dash_config['variables'],
+                          dash_config['ignore'])
     dashboard.create_plots(_output_dir)
 
 

@@ -46,7 +46,8 @@ class Dashboard:
     def __init__(self,
                  grafana_client: GrafanaClient,
                  uid: str,
-                 variables: list = None):
+                 variables: list = None,
+                 ignore_regex: str = ''):
         """
         :param grafana_client: The client of which is connected to the grafana instance to create plots from
         :param uid: The uid of the dashboard
@@ -54,6 +55,7 @@ class Dashboard:
                           (not display names, correct values can be found in dashboard->settings->variables).
                           Make sure not too many are passed since it creates many plots (intervals for example).
                           For variables which are not listed here, the default which is set in the grafana UI is used.
+        :param ignore_regex: Regular expression matching values of the variable which shall be ignored.
         """
 
         self.grafana_client = grafana_client
@@ -68,18 +70,22 @@ class Dashboard:
         regex = compile("|".join(variables))
 
         variables_json = self.json['templating']['list']
-        variables_json = filter(lambda v: regex.fullmatch(v['name']), variables_json)
+        variables_json = filter(lambda v: regex.fullmatch(v['name']),
+                                variables_json)
 
         self.variables = []
         for var in variables_json:
-            self.__resolve_variable(var)
+            self.__resolve_variable(var,
+                                    ignore_regex)
 
     def __resolve_variable(self,
-                           var: dict) -> None:
+                           var: dict,
+                           ignore: str = '') -> None:
         """
         Resolve the values for the selected variables via grafana
 
         :param var: The name of the variable to resolve
+        :param ignore: Regular expression matching values of the variable which shall be ignored
         """
 
         v_type = var['type']
@@ -91,9 +97,10 @@ class Dashboard:
             # Intervals should be used sparingly, but they are handled anyway
             # First the values are extracted from the array of interval objects,
             # then unwanted multi value options are removed
-            values = list(filter(lambda v: v != '$__auto_interval_interval',
-                                 map(lambda v: v['value'],
-                                     var['options'])))
+            values = map(lambda v: v['value'],
+                         var['options'])
+            values = filter(lambda o: o != '$__auto_interval_interval',
+                            values)
         elif v_type == 'query':
             # Query types need to be resolved by querying the respective datasource,
             # fortunately this can be done via grafana's builtin proxy
@@ -106,9 +113,14 @@ class Dashboard:
             print(f'ERROR: Variable type {v_type} is currently not supported')
             exit(1)
 
+        if ignore != '':
+            ignore = compile(ignore)
+            values = filter(lambda o: not ignore.match(o),
+                            values)
+
         self.variables.append(Variable(
             var['name'],
-            values
+            list(values)
         ))
 
     def create_plots(self,
@@ -189,13 +201,18 @@ class Dashboard:
                 # Append each variable value in a recursive call to the params
                 # create a temporary _dir variable since for the current variable the parent directory should always
                 # be the same.
-                _dir = os_path.join(dir, slugify(val))
+                _dir = os_path.join(dir,
+                                    slugify(val))
                 Path(_dir).mkdir(exist_ok=True)
                 params[f'var-{current_var.name}'] = val
-                self.__rec_create_panel_plot(_dir, params, var_index + 1)
+                self.__rec_create_panel_plot(_dir,
+                                             params,
+                                             var_index + 1)
         else:
             # if the variable is not used the next one will be checked
-            self.__rec_create_panel_plot(dir, params, var_index + 1)
+            self.__rec_create_panel_plot(dir,
+                                         params,
+                                         var_index + 1)
 
     def __save_png(self,
                    name: str,

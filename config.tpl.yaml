@@ -21,11 +21,13 @@ dashboards:
   # This dashboard does not have variables specified, so they will be ignored and
   # only the default values are used
   - uid: oOf-u1V7z
-  # Another dashboard with specified variables
-  # Only the specified variables are used when plotting panels, others are ignored
+  # Another dashboard with specified variables and an 'ignore' regex pattern
+  # Only the specified variables are used when plotting panels, others are ignored or
   # only their default is used automatically by grafana
+  # When resolving variable values the ones matching 'ignore' will be filtered out.
   - uid: BJO0XQS7k
     variables: ['job', 'protocol']
+    ignore: '127.0.0.1:*|172.0.0.10:*'
 
 prometheus:
   # Currently this program is very limited and the prometheus node exporter job name

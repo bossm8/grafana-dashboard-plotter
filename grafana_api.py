@@ -180,11 +180,9 @@ class GrafanaClient:
             }
             result = self.__datasource_proxy(f'{datasource_id}/api/v1/series', params).json()
             # Extract the required values from the json and filter out unwanted multi value options
-            result = list(set(
-                filter(lambda v: v != '$__all',
-                       map(lambda m: m[label],
-                           result['data']))
-            ))
+            result = map(lambda m: m.get(label, ''), result['data'])
+            result = filter(lambda v: v != '$__all' and v != '', result)
+            result = list(set(result))
 
         return result
 
