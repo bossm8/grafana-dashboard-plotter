@@ -92,7 +92,10 @@ class Dashboard:
 
         if v_type == 'custom':
             # Custom variables have predefined and constant values, no need for special resolving
-            values = var['options']
+            values = map(lambda v: v['value'],
+                         var['options'])
+            values = filter(lambda o: o != '$__all',
+                            values)
         elif v_type == 'interval':
             # Intervals should be used sparingly, but they are handled anyway
             # First the values are extracted from the array of interval objects,
