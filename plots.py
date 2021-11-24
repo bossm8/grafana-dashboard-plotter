@@ -6,7 +6,6 @@ Grafana Dashboard plotter entrypoint
 @Licence: MIT
 @Author: Boss Marco <bossm8@hotmail.com>
 """
-
 from os import path as os_path
 from time import time, strftime, localtime
 from argparse import ArgumentParser
@@ -15,6 +14,13 @@ from grafana_api import GrafanaClient
 from dashboard import Dashboard
 from pathlib import Path
 from yaml import safe_load, YAMLError
+from logging import getLogger, StreamHandler, Formatter
+from sys import stdout
+
+_logger = getLogger('default')
+_handler = StreamHandler(stdout)
+_handler.setFormatter(Formatter('%(levelname)s: %(message)s'))
+_logger.addHandler(_handler)
 
 with open("config.yaml", "r") as config:
     try:
@@ -30,6 +36,8 @@ _output_dir = os_path.join(
     Path(__file__).parent.resolve(),
     _cfg.get('plots', {'output_dir': 'plots'}).get('output_dir')
 )
+
+_logger.setLevel(str(_cfg.get('log_level', 'info')).upper())
 
 
 def plot_dashboard(dash_config: dict):
@@ -63,7 +71,7 @@ def run(sequential: bool = False):
     dashboards_c = _cfg.get('dashboards')
 
     if sequential:
-        print('INFO: Handling dashboards sequentially')
+        _logger.info('Handling dashboards sequentially')
         for dash in dashboards_c:
             plot_dashboard(dash)
     else:
@@ -71,7 +79,7 @@ def run(sequential: bool = False):
         pool.map(plot_dashboard, dashboards_c)
         pool.close()
 
-    print('INFO: Plotting finished')
+    _logger.info('Plotting finished')
 
 
 def main():
@@ -107,7 +115,7 @@ def main():
         tls_verify=True if str(_cfg.get('grafana').get('tls_verify', 'true')).lower() in ['true', '1'] else False
     )
 
-    print('INFO: Creating plots between {} and {}'.format(
+    _logger.info('Creating plots between {} and {}'.format(
         strftime('%X %x', localtime(args['from_s'])),
         strftime('%X %x', localtime(args['to_s']))
     ))

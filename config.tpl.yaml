@@ -39,3 +39,5 @@ plots:
   # Absolute or relative path to the directory to store the plots into
   # OPTIONAL (default: ./plots)
   output_dir: plots
+
+log_level: info

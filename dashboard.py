@@ -10,6 +10,9 @@ from slugify import slugify
 from pathlib import Path
 from os import path as os_path
 from re import compile
+from logging import getLogger
+
+_logger = getLogger('default')
 
 
 class Variable:
@@ -33,6 +36,9 @@ class Variable:
 
         self.name = name
         self.values = values
+
+    def __str__(self):
+        return f'{self.name}: {self.values}'
 
 
 class Dashboard:
@@ -65,9 +71,13 @@ class Dashboard:
         self.slug = dash_json['meta']['slug']
         self.json = dash_json['dashboard']
 
+        _logger.debug(f'Dash: {self.uid} has slug `{self.slug}`')
+
         if variables is None:
             variables = []
         regex = compile("|".join(variables))
+
+        _logger.debug(f'Dash: {self.uid} using variable regex `{regex.pattern}`')
 
         variables_json = self.json['templating']['list']
         variables_json = filter(lambda v: regex.fullmatch(v['name']),
@@ -77,6 +87,8 @@ class Dashboard:
         for var in variables_json:
             self.__resolve_variable(var,
                                     ignore_regex)
+
+        _logger.debug(f'Dash: {self.uid} variables: {self.variables}')
 
     def __resolve_variable(self,
                            var: dict,
@@ -113,7 +125,7 @@ class Dashboard:
             )
         else:
             # Abort if the variable is not known
-            print(f'ERROR: Variable type {v_type} is currently not supported')
+            _logger.error(f'Variable type `{v_type}` is currently not supported')
             exit(1)
 
         if ignore != '':
@@ -185,6 +197,7 @@ class Dashboard:
             # if used, values are contained in params
             # if not, there may be none or there were no variables in the first place
             # this is the last iteration where the snapshot is created.
+            _logger.debug(f'Dash: {self.uid} creating plot from `{self.current_panel["title"]}` with params {params}')
             slug = slugify(self.current_panel['title'])
             self.__save_png(name=os_path.join(dir, slug + '.png'),
                             params=params)
@@ -238,7 +251,7 @@ class Dashboard:
             params['height'] = 800
             params['width'] = 1200
 
-        print(f'INFO: Creating {name}')
+        _logger.info(f'Creating {name}')
         result = self.grafana_client.d_solo_render(params=params,
                                                    dashboard_uid=self.uid,
                                                    dashboard_slug=self.slug)

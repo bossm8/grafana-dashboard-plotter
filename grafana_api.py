@@ -4,12 +4,14 @@ Client implementation for the Grafana API
 @Licence: MIT
 @Author: Boss Marco <bossm8@hotmail.com>
 """
-
 from re import compile
 from time import time_ns
 from urllib3 import disable_warnings
 from requests import request, Response
 from urllib3.exceptions import InsecureRequestWarning
+from logging import getLogger
+
+_logger = getLogger('default')
 
 
 class GrafanaClient:
@@ -41,7 +43,7 @@ class GrafanaClient:
         self.base_url = base_url
         self.verify = tls_verify
         if not self.verify:
-            print('INFO: Skipping certificate verification')
+            _logger.info('Skipping certificate verification')
             disable_warnings(InsecureRequestWarning)
         _current_time_ms = int(time_ns() // 1_000_000)
         self.from_ms = from_ms if from_ms is not None else _current_time_ms - (3600 * 1000)
@@ -72,7 +74,7 @@ class GrafanaClient:
             if ds['name'] == name:
                 return ds
 
-        print(f'ERROR: Datasource {name} is not available')
+        print(f'ERROR: Datasource `{name}` is not available')
         exit(1)
 
     def __do_request(self,
@@ -99,9 +101,10 @@ class GrafanaClient:
                        verify=self.verify)
 
         if not resp.ok:
-            print(f'ERROR: Request for {resp.url} failed with {resp.status_code} {resp.reason}')
+            _logger.error(f'Request for `{resp.url}` failed with {resp.status_code} {resp.reason}')
             exit(1)
 
+        _logger.debug(f'Successfully requested `{resp.url}`')
         return resp
 
     def get_dashboard_json(self,
@@ -220,8 +223,8 @@ class GrafanaClient:
         if ds['type'] == "prometheus":
             return self.query_prometheus(query, ds)
         elif ds['type'] == "loki":
-            print('WARNING: Loki queries not implemented yet')
+            _logger.warning(f'Loki queries not implemented yet')
             exit(1)
         else:
-            print(f'ERROR: Unsupported datasource type {ds["type"]}')
+            _logger.error(f'Unsupported datasource type `{ds["type"]}`')
             exit(1)
