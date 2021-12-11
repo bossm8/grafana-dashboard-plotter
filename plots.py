@@ -10,8 +10,8 @@ from os import path as os_path
 from time import time, strftime, localtime
 from argparse import ArgumentParser
 from multiprocessing import Pool, cpu_count
-from grafana_api import GrafanaClient
-from dashboard import Dashboard
+from grafana_api import GrafanaClient, ApiError, DataSourceError
+from dashboard import Dashboard, VariableError
 from pathlib import Path
 from yaml import safe_load, YAMLError
 from logging import getLogger, StreamHandler, Formatter
@@ -52,11 +52,16 @@ def plot_dashboard(dash_config: dict):
     if 'ignore' not in dash_config:
         dash_config['ignore'] = ''
 
-    dashboard = Dashboard(_grafana_client,
-                          dash_config['uid'],
-                          dash_config['variables'],
-                          dash_config['ignore'])
-    dashboard.create_plots(_output_dir)
+    try:
+        dashboard = Dashboard(_grafana_client,
+                              dash_config['uid'],
+                              dash_config['variables'],
+                              dash_config['ignore'])
+        dashboard.create_plots(_output_dir)
+    except (VariableError, DataSourceError, ApiError) as ex:
+        _logger.error(f'Dashboard {dash_config["uid"]} failed with exception:\n {str(ex)}')
+    finally:
+        _logger.info(f'Dashboard {dash_config["uid"]} finished')
 
 
 def run(sequential: bool = False):
@@ -78,6 +83,7 @@ def run(sequential: bool = False):
         pool = Pool(cpu_count())
         pool.map(plot_dashboard, dashboards_c)
         pool.close()
+        pool.join()
 
     _logger.info('Plotting finished')
 

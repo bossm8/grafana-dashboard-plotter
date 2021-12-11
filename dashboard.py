@@ -15,6 +15,10 @@ from logging import getLogger
 _logger = getLogger('default')
 
 
+class VariableError(Exception):
+    pass
+
+
 class Variable:
     """
     Dashboard Variable
@@ -119,14 +123,14 @@ class Dashboard:
         elif v_type == 'query':
             # Query types need to be resolved by querying the respective datasource,
             # fortunately this can be done via grafana's builtin proxy
+            var['datasource'] = None
             values = self.grafana_client.execute_query(
                 var['query'],
                 var['datasource']
             )
         else:
             # Abort if the variable is not known
-            _logger.error(f'Variable type `{v_type}` is currently not supported')
-            exit(1)
+            raise VariableError(f'Variable type `{v_type}` is currently not supported')
 
         if ignore != '':
             ignore = compile(ignore)

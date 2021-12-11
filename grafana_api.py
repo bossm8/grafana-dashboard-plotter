@@ -14,6 +14,14 @@ from logging import getLogger
 _logger = getLogger('default')
 
 
+class DataSourceError(Exception):
+    pass
+
+
+class ApiError(Exception):
+    pass
+
+
 class GrafanaClient:
     """
     The Grafana API client
@@ -74,8 +82,7 @@ class GrafanaClient:
             if ds['name'] == name:
                 return ds
 
-        print(f'ERROR: Datasource `{name}` is not available')
-        exit(1)
+        raise DataSourceError(f'Datasource `{name}` is not available')
 
     def __do_request(self,
                      method: str,
@@ -101,8 +108,7 @@ class GrafanaClient:
                        verify=self.verify)
 
         if not resp.ok:
-            _logger.error(f'Request for `{resp.url}` failed with {resp.status_code} {resp.reason}')
-            exit(1)
+            raise ApiError(f'Request for `{resp.url}` failed with {resp.status_code} {resp.reason}')
 
         _logger.debug(f'Successfully requested `{resp.url}`')
         return resp
@@ -223,8 +229,6 @@ class GrafanaClient:
         if ds['type'] == "prometheus":
             return self.query_prometheus(query, ds)
         elif ds['type'] == "loki":
-            _logger.warning(f'Loki queries not implemented yet')
-            exit(1)
+            raise DataSourceError('Loki queries not implemented yet')
         else:
-            _logger.error(f'Unsupported datasource type `{ds["type"]}`')
-            exit(1)
+            raise DataSourceError(f'Unsupported datasource type `{ds["type"]}`')
