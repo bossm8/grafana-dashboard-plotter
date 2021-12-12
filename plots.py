@@ -51,12 +51,15 @@ def plot_dashboard(dash_config: dict):
         dash_config['variables'] = []
     if 'ignore' not in dash_config:
         dash_config['ignore'] = ''
+    if 'collapsed' not in dash_config:
+        dash_config['collapsed'] = False
 
     try:
         dashboard = Dashboard(_grafana_client,
                               dash_config['uid'],
                               dash_config['variables'],
-                              dash_config['ignore'])
+                              dash_config['ignore'],
+                              dash_config['collapsed'])
         dashboard.create_plots(_output_dir)
     except (VariableError, DataSourceError, ApiError) as ex:
         _logger.error(f'Dashboard {dash_config["uid"]} failed with exception:\n {str(ex)}')

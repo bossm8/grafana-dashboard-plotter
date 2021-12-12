@@ -57,7 +57,8 @@ class Dashboard:
                  grafana_client: GrafanaClient,
                  uid: str,
                  variables: list = None,
-                 ignore_regex: str = ''):
+                 ignore_regex: str = '',
+                 render_collapsed: bool = False):
         """
         :param grafana_client: The client of which is connected to the grafana instance to create plots from
         :param uid: The uid of the dashboard
@@ -70,6 +71,7 @@ class Dashboard:
 
         self.grafana_client = grafana_client
         self.uid = uid
+        self.render_collapsed = render_collapsed
 
         dash_json = self.grafana_client.get_dashboard_json(self.uid)
         self.slug = dash_json['meta']['slug']
@@ -123,7 +125,6 @@ class Dashboard:
         elif v_type == 'query':
             # Query types need to be resolved by querying the respective datasource,
             # fortunately this can be done via grafana's builtin proxy
-            var['datasource'] = None
             values = self.grafana_client.execute_query(
                 var['query'],
                 var['datasource']
@@ -156,6 +157,9 @@ class Dashboard:
         for panel in self.json['panels']:
             if panel['type'] != 'row':
                 self.create_panel_plot(_dir, panel)
+            elif self.render_collapsed and panel['collapsed'] is True:
+                for collapsed_panel in panel['panels']:
+                    self.create_panel_plot(_dir, collapsed_panel)
 
     def create_panel_plot(self,
                           base_dir: str,

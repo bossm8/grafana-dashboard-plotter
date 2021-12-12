@@ -21,6 +21,8 @@ dashboards:
   # This dashboard does not have variables specified, so they will be ignored and
   # only the default values are used
   - uid: oOf-u1V7z
+    # Render panels which are part of a collapsed row (default: false)
+    collapsed: true
   # Another dashboard with specified variables and an 'ignore' regex pattern
   # Only the specified variables are used when plotting panels, others are ignored or
   # only their default is used automatically by grafana
