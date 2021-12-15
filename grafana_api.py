@@ -70,19 +70,24 @@ class GrafanaClient:
         self.datasources = self.__do_request('GET', '/api/datasources').json()
 
     def get_datasource_json(self,
-                            name: str) -> dict:
+                            datasource) -> dict:
         """
         Get the json of a specific datasource
 
-        :param name: Name of the datasource
+        :param datasource: Either the name or the json {type: <>, uid: <>} of a datasource
         :return: The datasources json representation
         """
 
-        for ds in self.datasources:
-            if ds['name'] == name:
-                return ds
+        if type(datasource) is dict:
+            for ds in self.datasources:
+                if ds['uid'] == datasource['uid']:
+                    return ds
+        else:
+            for ds in self.datasources:
+                if ds['name'] == datasource:
+                    return ds
 
-        raise DataSourceError(f'Datasource `{name}` is not available')
+        raise DataSourceError(f'Datasource `{datasource}` is not available')
 
     def __do_request(self,
                      method: str,
@@ -216,12 +221,12 @@ class GrafanaClient:
 
     def execute_query(self,
                       query: dict,
-                      datasource: str):
+                      datasource):
         """
         Execute a query on a datasource via grafana
         :param query: The json query extracted from the dashboard e.g. dashboard.templating.list[].query
-        :param datasource: The name of the datasource to execute the query against, also in the dashboard,
-                        e.g. dashboard.templating.list[].datasource
+        :param datasource: The name or the json of the datasource to execute the query against, also in the dashboard,
+                           e.g. dashboard.templating.list[].datasource (json: {type: <>, uid: <>})
         :return: The processed result data of the query (e.g. a list for label_values)
         """
 
