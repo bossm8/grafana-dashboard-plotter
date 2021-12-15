@@ -56,21 +56,28 @@ class Dashboard:
     def __init__(self,
                  grafana_client: GrafanaClient,
                  uid: str,
+                 graph_width: int = 1200,
+                 graph_height: int = 500,
                  variables: list = None,
                  ignore_regex: str = '',
                  render_collapsed: bool = False):
         """
         :param grafana_client: The client of which is connected to the grafana instance to create plots from
         :param uid: The uid of the dashboard
+        :param graph_width: Width to render timeseries and graph panels
+        :param graph_height: Height to render timeseries and graph panels
         :param variables: List of variables names which shall be used when querying for plots
                           (not display names, correct values can be found in dashboard->settings->variables).
                           Make sure not too many are passed since it creates many plots (intervals for example).
                           For variables which are not listed here, the default which is set in the grafana UI is used.
         :param ignore_regex: Regular expression matching values of the variable which shall be ignored.
+        :param render_collapsed: If panels located inside collapsed rows should be rendered too
         """
 
         self.grafana_client = grafana_client
         self.uid = uid
+        self.graph_width = graph_width
+        self.graph_height = graph_height
         self.render_collapsed = render_collapsed
 
         dash_json = self.grafana_client.get_dashboard_json(self.uid)
@@ -256,8 +263,8 @@ class Dashboard:
 
         # Add a custom height for graphs and timeseries so that all legend values are added for sure
         if self.current_panel['type'] == 'graph' or self.current_panel['type'] == 'timeseries':
-            params['height'] = 800
-            params['width'] = 1200
+            params['height'] = self.graph_height
+            params['width'] = self.graph_width
 
         _logger.info(f'Creating {name}')
         result = self.grafana_client.d_solo_render(params=params,

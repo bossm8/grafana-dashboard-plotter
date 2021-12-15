@@ -54,9 +54,15 @@ def plot_dashboard(dash_config: dict):
     if 'collapsed' not in dash_config:
         dash_config['collapsed'] = False
 
+    graph_config = dash_config.get('graph', {'width': 1200, 'height': 500})
+    width = graph_config.get('width', 1200)
+    height = graph_config.get('height', 500)
+
     try:
         dashboard = Dashboard(_grafana_client,
                               dash_config['uid'],
+                              width,
+                              height,
                               dash_config['variables'],
                               dash_config['ignore'],
                               dash_config['collapsed'])

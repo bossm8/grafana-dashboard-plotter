@@ -23,6 +23,12 @@ dashboards:
   - uid: oOf-u1V7z
     # Render panels which are part of a collapsed row (default: false)
     collapsed: true
+    # Define custom dimensions for timeseries or graph panels,
+    # useful if many labels are present in table form below the graph.
+    # (default 1200x500)
+    graph:
+      width: 1200
+      height: 500
   # Another dashboard with specified variables and an 'ignore' regex pattern
   # Only the specified variables are used when plotting panels, others are ignored or
   # only their default is used automatically by grafana
