@@ -5,6 +5,7 @@ Grafana Dashboard implementation to save its panels as png plots
 @Author: Boss Marco <bossm8@hotmail.com>
 """
 
+import re
 from grafana_api import GrafanaClient
 from slugify import slugify
 from pathlib import Path
@@ -270,5 +271,6 @@ class Dashboard:
         result = self.grafana_client.d_solo_render(params=params,
                                                    dashboard_uid=self.uid,
                                                    dashboard_slug=self.slug)
-        with open(name, 'wb') as png:
-            png.write(result.content)
+        if result.ok:
+            with open(name, 'wb') as png:
+                png.write(result.content)
