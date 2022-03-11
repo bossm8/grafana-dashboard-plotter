@@ -14,6 +14,9 @@ grafana:
   # If the certificate of the instance should be verified
   # OPTIONAL (default: true)
   tls_verify: true
+  # If grafana should abort on PLOT creating api requests
+  # OPTIONAL (default: false)
+  abort_on_api_error: false
 
 # Which dashboards shall be plotted
 dashboards:

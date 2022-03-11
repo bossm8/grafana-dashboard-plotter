@@ -4,6 +4,7 @@ Client implementation for the Grafana API
 @Licence: MIT
 @Author: Boss Marco <bossm8@hotmail.com>
 """
+from http.client import OK
 from re import compile
 from time import time_ns
 from urllib3 import disable_warnings
@@ -33,7 +34,8 @@ class GrafanaClient:
                  from_ms: int = None,
                  to_ms: int = None,
                  node_exporter_job_name: str = 'node',
-                 tls_verify: bool = True):
+                 tls_verify: bool = True,
+                 abort_on_error: bool = False):
         """
         Create a grafana client.
         From and To are static, means all queries and renders are done in the time period in between those two.
@@ -46,10 +48,13 @@ class GrafanaClient:
                       (default: now)
         :param node_exporter_job_name: The name of the job (scrape_config) for the prometheus node exporter
         :param tls_verify: If the instances certificate should be verified
+        :param abort_on_error: If there should be an exception when requesting a plot fails
+                               If False, the next plot will be tried
         """
 
         self.base_url = base_url
         self.verify = tls_verify
+        self.abort_on_error = abort_on_error
         if not self.verify:
             _logger.info('Skipping certificate verification')
             disable_warnings(InsecureRequestWarning)
@@ -112,8 +117,10 @@ class GrafanaClient:
                        params=params,
                        verify=self.verify)
 
-        if not resp.ok:
-            raise ApiError(f'Request for `{resp.url}` failed with {resp.status_code} {resp.reason}')
+        if not resp.ok and self.abort_on_error:
+            raise ApiError(f'Request for `{resp.url}` failed with {resp.status_code} {resp.reason}, aborting dashboard')
+        elif not resp.ok:
+            _logger.error(f'Failed to request `{resp.url}`: {resp.status_code} {resp.reason}, continuing with others')
 
         _logger.debug(f'Successfully requested `{resp.url}`')
         return resp
