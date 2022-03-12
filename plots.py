@@ -127,7 +127,8 @@ def main():
         from_ms=args['from_s'] * 1000,
         to_ms=args['to_s'] * 1000,
         node_exporter_job_name=_cfg.get('prometheus', {'node_exporter_job_name': 'node'}).get('node_exporter_job_name'),
-        tls_verify=True if str(_cfg.get('grafana').get('tls_verify', 'true')).lower() in ['true', '1'] else False
+        tls_verify=True if str(_cfg.get('grafana').get('tls_verify', 'true')).lower() in ['true', '1'] else False,
+        abort_on_error=True if str(_cfg.get('grafana').get('abort_on_api_error', 'false')).lower() in ['true', '1'] else False
     )
 
     _logger.info('Creating plots between {} and {}'.format(
